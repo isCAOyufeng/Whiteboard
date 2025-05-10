@@ -9,6 +9,12 @@ public class ClientServant extends UnicastRemoteObject implements WhiteboardClie
         this.username = username;
     }
 
+//    public void initialise(java.util.List<DrawCommand> commandList) {
+//        for (DrawCommand command : commandList) {
+//            Whiteboard.canvas.draw(command.getUsername(), command.getStartPoint(), command.getEndPoint(), ToolType.fromDrawCommandType(command.getType()), command.getPath(), command.getColor(), command.getEraserSize(), command.getText());
+//        }
+//    }
+
     @Override
     public void receiveCommand(DrawCommand command) throws RemoteException {
         String username = command.getUsername();

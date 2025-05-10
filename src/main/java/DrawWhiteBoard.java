@@ -28,6 +28,17 @@ public class DrawWhiteBoard extends JPanel {
         g2.fillRect(0, 0, 800, 600);
         g2.setColor(currentColor);
 
+        List<DrawCommand> commandList = List.of();
+        try {
+            commandList = serverStub.getCommandList();
+        } catch (RemoteException e) {
+            System.out.println("failed fetching command list.");
+        }
+        
+        for (DrawCommand command : commandList) {
+            this.draw(command.getUsername(), command.getStartPoint(), command.getEndPoint(), ToolType.fromDrawCommandType(command.getType()), command.getPath(), command.getColor(), command.getEraserSize(), command.getText());
+        }
+
         MouseAdapter mouseAdapter = new MouseAdapter() {
             DrawCommand command;
 

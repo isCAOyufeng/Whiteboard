@@ -1,11 +1,14 @@
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class ServerServant extends UnicastRemoteObject implements WhiteboardServerStub {
     private final Set<WhiteboardClientStub> clientList = new HashSet<>();
     private final Set<String> usernameList = new HashSet<>();
+    private final List<DrawCommand> commandList = new ArrayList<>();
 
     protected ServerServant() throws RemoteException {
     }
@@ -19,6 +22,8 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
                 e.printStackTrace();
             }
         }
+
+        commandList.add(command);
     }
 
     @Override
@@ -28,5 +33,9 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
         }
         usernameList.add(clientStub.getUsername());
         clientList.add(clientStub);
+    }
+
+    public List<DrawCommand> getCommandList() {
+        return commandList;
     }
 }

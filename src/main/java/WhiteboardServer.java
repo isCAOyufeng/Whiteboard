@@ -1,5 +1,7 @@
 import java.rmi.Naming;
 import java.rmi.registry.LocateRegistry;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WhiteboardServer {
     public static void main(String[] args) {
@@ -13,4 +15,8 @@ public class WhiteboardServer {
             e.printStackTrace();
         }
     }
+
+//    public void addCommand(DrawCommand command) {
+//        commandList.add(command);
+//    }
 }
