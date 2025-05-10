@@ -5,7 +5,6 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 ;
@@ -254,18 +253,16 @@ public class DrawWhiteBoard extends JPanel {
             }
         }
 
-//        g2.setColor(Color.RED);
-//        g2.setFont(new Font("Arial", Font.BOLD, 12));
-//        g2.drawString(username, endPoint.x + 5, endPoint.y - 5);
-//        repaint();
-//
-//        Timer timer = new Timer(1000, e1 -> {
-//            DrawWhiteBoard.this.username = null;
-//            DrawWhiteBoard.this.usernameLabelPoint = null;
-//            repaint();
-//        });
-//        timer.setRepeats(false); // 只执行一次
-//        timer.start();
+        DrawWhiteBoard.this.username = username;
+        DrawWhiteBoard.this.usernameLabelPoint = (toolType == ToolType.TEXT) ? startPoint : endPoint;
+        repaint();
+        Timer timer = new Timer(1000, e1 -> {
+            DrawWhiteBoard.this.username = null;
+            DrawWhiteBoard.this.usernameLabelPoint = null;
+            repaint();
+        });
+        timer.setRepeats(false);
+        timer.start();
     }
 
     @Override
