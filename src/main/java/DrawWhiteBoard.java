@@ -281,7 +281,6 @@ public class DrawWhiteBoard extends JPanel {
         super.paintComponent(g);
         g.drawImage(canvasImage, 0, 0, null);
 
-        // Draw temporary username label if present
         if (username != null && usernameLabelPoint != null) {
             g.setColor(Color.RED);
             g.setFont(new Font("Arial", Font.BOLD, 12));

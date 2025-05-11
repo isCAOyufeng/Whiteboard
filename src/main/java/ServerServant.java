@@ -33,29 +33,18 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
         clientList.add(clientStub);
     }
 
-//    @Override
-//    public void sendServerDownMessage() throws RemoteException {
-//        for (WhiteboardClientStub clientStub : clientList) {
-//            try {
-//                clientStub.receiveServerDownMessage();
-//            } catch (RemoteException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
-
     @Override
     public void sendServerDownMessage() throws RemoteException {
         Set<WhiteboardClientStub> clientsCopy;
         synchronized (clientList) {
             System.out.println("executed.");
-            clientsCopy = new HashSet<>(clientList); // 复制副本
+            clientsCopy = new HashSet<>(clientList);
         }
 
         for (WhiteboardClientStub clientStub : clientsCopy) {
             System.out.println("executed.");
             try {
-                clientStub.receiveServerDownMessage(); // 会间接触发 removeClient
+                clientStub.receiveServerDownMessage();
                 System.out.println("executed.");
             } catch (RemoteException e) {
                 System.out.println("remote exception.");
@@ -73,12 +62,8 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
     @Override
     public void shutDownServer(String ip, int port) throws RemoteException {
         try {
-            // unbind the name from registry
             Naming.unbind("rmi://" + ip + ":" + port + "/whiteboard");
-
-            // unexport this remote object
             UnicastRemoteObject.unexportObject(this, true);
-
             System.out.println("Whiteboard server unbound and shut down cleanly.");
         } catch (Exception e) {
             e.printStackTrace();

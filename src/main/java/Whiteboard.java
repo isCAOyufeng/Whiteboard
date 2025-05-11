@@ -111,7 +111,6 @@ public class Whiteboard {
         }
 
         frame.dispose();
-//        loginDialog.setFrameVisible();
     }
 
     public static void managerExit() {
@@ -129,12 +128,10 @@ public class Whiteboard {
                 ex.printStackTrace();
             }
 
-            // 关闭 GUI
             SwingUtilities.invokeLater(() -> {
                 System.out.println("Disposing frame...");
                 frame.dispose();
                 System.exit(0);
-//                loginDialog.setFrameVisible();
             });
         }).start();
     }

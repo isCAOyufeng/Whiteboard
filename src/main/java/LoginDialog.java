@@ -5,7 +5,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 public class LoginDialog extends JDialog{
-    private JFrame frame;
+    private static JFrame frame;
     private boolean isAdmin;
     private String username;
     private String ip;
@@ -66,43 +66,31 @@ public class LoginDialog extends JDialog{
             if (isAdmin) {
                 try {
                     WhiteboardServer.main(new String[]{ip, ((Integer) port).toString()});
-//                    WhiteboardServer.main(new String[]{});
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(frame, "Failed to start server on this IP/Port. It may already be in use.", "Server Error", JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
-//                this.isSucceed = true;
-            } else {
-
-//                this.isSucceed = true;
             }
 
             try {
                 this.clientStub = new ClientServant(this.username);
-                System.out.println("clientStub created.");
-
             } catch (RemoteException re) {
-                System.out.println("client stub creation failed.");
+                JOptionPane.showMessageDialog(frame, "Failed to create client stub.", "Server Error", JOptionPane.ERROR_MESSAGE);
             }
 
             try {
-                // hard code for now
-                Registry registry = LocateRegistry.getRegistry(ip);
+                Registry registry = LocateRegistry.getRegistry(ip, port);
                 serverStub = (WhiteboardServerStub) registry.lookup("whiteboard");
-                System.out.println("serverStub created.");
-
             } catch (Exception ex) {
-                System.out.println("registry or remote stub not found.");
+                JOptionPane.showMessageDialog(frame, "Registry not found.", "Server Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             try {
                 serverStub.registerClient(clientStub);
-
-                System.out.println("client registered.");
-
             } catch (RemoteException ex) {
                 System.out.println("client register failed.");
-                JOptionPane.showMessageDialog(this, "client register failed.");
+                JOptionPane.showMessageDialog(this, "Client register failed.");
             } catch (DuplicateUsernameException ex) {
                 System.out.println(ex.getMessage());
                 JOptionPane.showMessageDialog(this, ex.getMessage());
@@ -114,11 +102,12 @@ public class LoginDialog extends JDialog{
             if (this.username != null) {
                 this.isSucceed = true;
                 frame.setVisible(false); // close login
-
-                System.out.println("login closed.");
-
             }
         });
+    }
+
+    public static void showErrorMessage(String error) {
+        JOptionPane.showMessageDialog(frame, error, "Server Error", JOptionPane.ERROR_MESSAGE);
     }
 
     public boolean isSucceed() {
