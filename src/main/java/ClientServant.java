@@ -27,6 +27,7 @@ public class ClientServant extends UnicastRemoteObject implements WhiteboardClie
     public void receiveServerDownMessage() throws RemoteException {
         Whiteboard.clientExit();
         System.out.println("received server down message.");
+        System.exit(0);
     }
 
     public String getUsername() {

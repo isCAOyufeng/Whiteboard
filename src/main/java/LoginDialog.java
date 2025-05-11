@@ -78,6 +78,8 @@ public class LoginDialog extends JDialog{
 
             try {
                 this.clientStub = new ClientServant(this.username);
+                System.out.println("clientStub created.");
+
             } catch (RemoteException re) {
                 System.out.println("client stub creation failed.");
             }
@@ -86,6 +88,8 @@ public class LoginDialog extends JDialog{
                 // hard code for now
                 Registry registry = LocateRegistry.getRegistry(ip);
                 serverStub = (WhiteboardServerStub) registry.lookup("whiteboard");
+                System.out.println("serverStub created.");
+
             } catch (Exception ex) {
                 System.out.println("registry or remote stub not found.");
                 return;
@@ -93,6 +97,9 @@ public class LoginDialog extends JDialog{
 
             try {
                 serverStub.registerClient(clientStub);
+
+                System.out.println("client registered.");
+
             } catch (RemoteException ex) {
                 System.out.println("client register failed.");
                 JOptionPane.showMessageDialog(this, "client register failed.");
@@ -107,6 +114,9 @@ public class LoginDialog extends JDialog{
             if (this.username != null) {
                 this.isSucceed = true;
                 frame.setVisible(false); // close login
+
+                System.out.println("login closed.");
+
             }
         });
     }

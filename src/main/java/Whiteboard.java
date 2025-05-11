@@ -7,26 +7,24 @@ public class Whiteboard {
     public static DrawWhiteBoard canvas;
     private static LoginDialog loginDialog;
     private static String username;
-    private static boolean isContinue = true;
 
 
     public static void main(String[] args) {
-        loginDialog = new LoginDialog();
-        while (true) {
-//            System.out.println("");
-            username = loginDialog.getUsername();
-            if (loginDialog.isSucceed()) {
-                break;
+            loginDialog = new LoginDialog();
+            while (true) {
+                username = loginDialog.getUsername();
+                if (loginDialog.isSucceed()) {
+                    break;
+                }
             }
-        }
 
-        System.out.println("success");
+            System.out.println("success");
 
-        canvas = new DrawWhiteBoard(loginDialog.getServerStub());
+            canvas = new DrawWhiteBoard(loginDialog.getServerStub());
 
-        Whiteboard.launchWhiteboardGUI(username, loginDialog.getIp(), loginDialog.getPort(), loginDialog.isAdmin());
+            Whiteboard.launchWhiteboardGUI(username, loginDialog.getIp(), loginDialog.getPort(), loginDialog.isAdmin());
 
-        System.out.println("whiteboard window created.");
+            System.out.println("whiteboard window created.");
     }
 
     public static void launchWhiteboardGUI(String username, String ip, int port, boolean isAdmin) {
@@ -92,7 +90,7 @@ public class Whiteboard {
                     managerExit();
                 } else {
                     clientExit();
-//                    System.exit(0);
+                    System.exit(0);
                 }
             });
             toolsPanel.add(exit);
@@ -113,14 +111,13 @@ public class Whiteboard {
         }
 
         frame.dispose();
-        loginDialog.setVisible(true);
+//        loginDialog.setFrameVisible();
     }
 
     public static void managerExit() {
         System.out.println("managerExit called.");
 
         new Thread(() -> {
-            System.out.println("Background thread started.");
             try {
                 loginDialog.getServerStub().sendServerDownMessage();
                 System.out.println("sendServerDownMessage done.");
@@ -136,7 +133,8 @@ public class Whiteboard {
             SwingUtilities.invokeLater(() -> {
                 System.out.println("Disposing frame...");
                 frame.dispose();
-                loginDialog.setVisible(true);
+                System.exit(0);
+//                loginDialog.setFrameVisible();
             });
         }).start();
     }
