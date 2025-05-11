@@ -8,15 +8,12 @@ public class WhiteboardServer {
         try {
             LocateRegistry.createRegistry(1099);
             WhiteboardServerStub serverStub = new ServerServant();
-            Naming.rebind("rmi://localhost:1099/whiteboard", serverStub);
+//            Naming.rebind("rmi://localhost:1099/whiteboard", serverStub);
+            Naming.rebind("rmi://" + args[0] + ":" + args[1] + "/whiteboard", serverStub);
 
             System.out.println("Whiteboard server is running...");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
-//    public void addCommand(DrawCommand command) {
-//        commandList.add(command);
-//    }
 }

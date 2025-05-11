@@ -65,8 +65,8 @@ public class LoginDialog extends JDialog{
 
             if (isAdmin) {
                 try {
-//                    WhiteboardServer.main(new String[]{ip, ((Integer) port).toString()});
-                    WhiteboardServer.main(new String[]{});
+                    WhiteboardServer.main(new String[]{ip, ((Integer) port).toString()});
+//                    WhiteboardServer.main(new String[]{});
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(frame, "Failed to start server on this IP/Port. It may already be in use.", "Server Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -84,7 +84,7 @@ public class LoginDialog extends JDialog{
 
             try {
                 // hard code for now
-                Registry registry = LocateRegistry.getRegistry("localhost");
+                Registry registry = LocateRegistry.getRegistry(ip);
                 serverStub = (WhiteboardServerStub) registry.lookup("whiteboard");
             } catch (Exception ex) {
                 System.out.println("registry or remote stub not found.");
@@ -106,7 +106,7 @@ public class LoginDialog extends JDialog{
 
             if (this.username != null) {
                 this.isSucceed = true;
-                frame.dispose(); // close login
+                frame.setVisible(false); // close login
             }
         });
     }
@@ -133,5 +133,9 @@ public class LoginDialog extends JDialog{
 
     public WhiteboardServerStub getServerStub() {
         return this.serverStub;
+    }
+
+    public WhiteboardClientStub getClientStub() {
+        return this.clientStub;
     }
 }

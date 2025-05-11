@@ -9,12 +9,6 @@ public class ClientServant extends UnicastRemoteObject implements WhiteboardClie
         this.username = username;
     }
 
-//    public void initialise(java.util.List<DrawCommand> commandList) {
-//        for (DrawCommand command : commandList) {
-//            Whiteboard.canvas.draw(command.getUsername(), command.getStartPoint(), command.getEndPoint(), ToolType.fromDrawCommandType(command.getType()), command.getPath(), command.getColor(), command.getEraserSize(), command.getText());
-//        }
-//    }
-
     @Override
     public void receiveCommand(DrawCommand command) throws RemoteException {
         String username = command.getUsername();
@@ -27,6 +21,12 @@ public class ClientServant extends UnicastRemoteObject implements WhiteboardClie
         String text = command.getText();
 
         Whiteboard.canvas.draw(username, startPoint, endPoint, currentTool, path, color, rubberSize, text);
+    }
+
+    @Override
+    public void receiveServerDownMessage() throws RemoteException {
+        Whiteboard.clientExit();
+        System.out.println("received server down message.");
     }
 
     public String getUsername() {
