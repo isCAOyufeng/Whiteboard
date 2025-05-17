@@ -1,3 +1,11 @@
+package Login;
+
+import Exceptions.DuplicateUsernameException;
+import Servants.ClientServant;
+import Server.WhiteboardServer;
+import Stubs.WhiteboardClientStub;
+import Stubs.WhiteboardServerStub;
+
 import javax.swing.*;
 import java.awt.*;
 import java.rmi.RemoteException;

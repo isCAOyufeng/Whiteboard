@@ -1,3 +1,5 @@
+package LocalWhiteboard;
+
 public enum ToolType {
     LINE,
     TRIANGLE,

@@ -4,7 +4,7 @@
   <groupId>com.whiteboard</groupId>
   <artifactId>Whiteboard</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <name>Archetype - Whiteboard</name>
+  <name>Archetype - LocalWhiteboard.Whiteboard</name>
   <url>http://maven.apache.org</url>
   <build>
     <plugins>
@@ -15,6 +15,28 @@
           <source>14</source>
           <target>14</target>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>LocalWhiteboard.Whiteboard</mainClass>
+            </manifest>
+          </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

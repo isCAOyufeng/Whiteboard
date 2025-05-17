@@ -1,3 +1,4 @@
+package LocalWhiteboard;
 
 import java.awt.*;
 import java.io.Serializable;
@@ -8,15 +9,14 @@ public class DrawCommand implements Serializable {
         LINE, RECTANGLE, OVAL, TRIANGLE, FREEDRAW, TEXT, RUBBER;
     }
 
-    private String username;
-    private Type type;
-    private Point startPoint;
-    private Point endPoint;
+    private final String username;
+    private final Type type;
+    private final Point startPoint;
+    private final Point endPoint;
     private List<Point> path;
-    private Color color;
+    private final Color color;
     private String text;
-    private int eraserSize;
-    private Stroke stroke;
+    private final int eraserSize;
 
     public DrawCommand(String username, Type type, Point start, Point end, Color color, String text, int eraserSize) {
         this.username = username;

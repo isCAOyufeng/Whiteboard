@@ -1,3 +1,9 @@
+package Stubs;
+
+import Exceptions.DuplicateUsernameException;
+import LocalWhiteboard.DrawCommand;
+
+import java.awt.image.BufferedImage;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.List;
@@ -10,5 +16,7 @@ public interface WhiteboardServerStub extends Remote {
     void removeClient(WhiteboardClientStub clientStub) throws RemoteException;
     void shutDownServer(String ip, int port) throws RemoteException;
     List<DrawCommand> getCommandList() throws RemoteException;
+    void clearCommandList() throws RemoteException;
+    void sendClearCanvasMessage() throws RemoteException;
     List<WhiteboardClientStub> getClientList() throws RemoteException;
 }

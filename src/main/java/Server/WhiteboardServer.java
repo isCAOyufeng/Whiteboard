@@ -1,11 +1,13 @@
-import javax.swing.*;
+package Server;
+
+import Login.LoginDialog;
+import Servants.ServerServant;
+import Stubs.WhiteboardServerStub;
+
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.util.ArrayList;
-import java.util.List;
 
 public class WhiteboardServer {
     public static void main(String[] args) throws MalformedURLException, RemoteException {
@@ -16,7 +18,7 @@ public class WhiteboardServer {
             WhiteboardServerStub serverStub = new ServerServant();
             Naming.rebind("rmi://" + args[0] + ":" + args[1] + "/whiteboard", serverStub);
 
-            System.out.println("Whiteboard server is running...");
+            System.out.println("LocalWhiteboard.Whiteboard server is running...");
         } catch (Exception e) {
             LoginDialog.showErrorMessage("RMI Registry already running on port " + port + ". Please try other IP/port.");
             throw e;

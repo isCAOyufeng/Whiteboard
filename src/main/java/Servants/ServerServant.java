@@ -1,3 +1,11 @@
+package Servants;
+
+import Exceptions.DuplicateUsernameException;
+import LocalWhiteboard.DrawCommand;
+import Stubs.WhiteboardClientStub;
+import Stubs.WhiteboardServerStub;
+
+import java.awt.image.BufferedImage;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -8,7 +16,7 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
     private final Set<String> usernameList = new HashSet<>();
     private final List<DrawCommand> commandList = new ArrayList<>();
 
-    protected ServerServant() throws RemoteException {
+    public ServerServant() throws RemoteException {
     }
 
     @Override
@@ -48,20 +56,16 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
     public void sendServerDownMessage() throws RemoteException {
         List<WhiteboardClientStub> clientsCopy;
         synchronized (clientList) {
-//            System.out.println("executed.");
             clientsCopy = new ArrayList<>(clientList);
         }
 
         for (WhiteboardClientStub clientStub : clientsCopy) {
-//            System.out.println("executed.");
             try {
                 clientStub.receiveServerDownMessage();
-//                System.out.println("executed.");
             } catch (RemoteException e) {
                 System.out.println("remote exception.");
             }
         }
-//        System.out.println("execution ends.");
     }
 
     @Override
@@ -75,15 +79,27 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
         try {
             Naming.unbind("rmi://" + ip + ":" + port + "/whiteboard");
             UnicastRemoteObject.unexportObject(this, true);
-            System.out.println("Whiteboard server unbound and shut down cleanly.");
+            System.out.println("LocalWhiteboard.Whiteboard server unbound and shut down cleanly.");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-
+    @Override
     public List<DrawCommand> getCommandList() {
         return commandList;
+    }
+
+    @Override
+    public void clearCommandList() {
+        this.commandList.clear();
+    }
+
+    @Override
+    public void sendClearCanvasMessage() throws RemoteException {
+        for (WhiteboardClientStub clientStub : clientList) {
+            clientStub.receiveClearCanvasMessage();
+        }
     }
 
     @Override

@@ -1,5 +1,5 @@
 <archetype>
-  <id>Whiteboard</id>
+  <id>LocalWhiteboard.Whiteboard</id>
   <sources>
     <source>src/main/java/App.java</source>
   </sources>

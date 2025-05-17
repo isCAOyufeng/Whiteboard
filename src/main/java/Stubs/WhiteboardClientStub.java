@@ -1,3 +1,8 @@
+package Stubs;
+
+import LocalWhiteboard.DrawCommand;
+
+import java.awt.image.BufferedImage;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -7,4 +12,5 @@ public interface WhiteboardClientStub extends Remote {
     void receiveServerDownMessage() throws RemoteException;
     void receiveServerDownMessage(String message) throws RemoteException;
     String getUsername() throws RemoteException;
+    void receiveClearCanvasMessage() throws RemoteException;
 }

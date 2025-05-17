@@ -1,24 +1,24 @@
+package LocalWhiteboard;
+
+import Stubs.WhiteboardServerStub;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.awt.print.PageFormat;
-import java.awt.print.Printable;
-import java.awt.print.PrinterException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
-
-;
+import static LocalWhiteboard.ToolType.*;
 
 public class DrawWhiteBoard extends JPanel {
     private ToolType currentTool = ToolType.LINE;
     private Color currentColor = Color.BLACK;
     private Point startPoint, endPoint;
-    private List<Point> path = new ArrayList<>();
-    private BufferedImage canvasImage;
-    private Graphics2D g2;
+    private final List<Point> path = new ArrayList<>();
+    private final BufferedImage canvasImage;
+    private final Graphics2D g2;
     private int eraserSize = 10;
     private String username = null;
     private Point usernameLabelPoint = null;
@@ -277,6 +277,18 @@ public class DrawWhiteBoard extends JPanel {
         });
         timer.setRepeats(false);
         timer.start();
+    }
+
+    public void clearCanvas() {
+        g2.setColor(Color.WHITE);
+        g2.fillRect(0, 0, getWidth(), getHeight());
+        g2.setColor(currentColor);
+        repaint();
+    }
+
+    public void loadImage(BufferedImage image) {
+        g2.drawImage(image, 0, 0, this.getWidth(), this.getHeight(), null);
+        repaint();
     }
 
     @Override
