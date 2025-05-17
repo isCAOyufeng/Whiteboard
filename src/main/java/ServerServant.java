@@ -4,7 +4,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 
 public class ServerServant extends UnicastRemoteObject implements WhiteboardServerStub {
-    private final Set<WhiteboardClientStub> clientList = Collections.synchronizedSet(new HashSet<>());
+    private final List<WhiteboardClientStub> clientList = Collections.synchronizedList(new ArrayList<>());
     private final Set<String> usernameList = new HashSet<>();
     private final List<DrawCommand> commandList = new ArrayList<>();
 
@@ -25,6 +25,17 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
     }
 
     @Override
+    public void broadcastChatMessages(String username, String message) throws RemoteException {
+        for (WhiteboardClientStub clientStub : clientList) {
+            try {
+                clientStub.receiveChatMessage(username, message);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
     public void registerClient(WhiteboardClientStub clientStub) throws RemoteException, DuplicateUsernameException {
         if (usernameList.contains((clientStub.getUsername()))) {
             throw new DuplicateUsernameException("Username already exists.");
@@ -35,22 +46,22 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
 
     @Override
     public void sendServerDownMessage() throws RemoteException {
-        Set<WhiteboardClientStub> clientsCopy;
+        List<WhiteboardClientStub> clientsCopy;
         synchronized (clientList) {
-            System.out.println("executed.");
-            clientsCopy = new HashSet<>(clientList);
+//            System.out.println("executed.");
+            clientsCopy = new ArrayList<>(clientList);
         }
 
         for (WhiteboardClientStub clientStub : clientsCopy) {
-            System.out.println("executed.");
+//            System.out.println("executed.");
             try {
                 clientStub.receiveServerDownMessage();
-                System.out.println("executed.");
+//                System.out.println("executed.");
             } catch (RemoteException e) {
                 System.out.println("remote exception.");
             }
         }
-        System.out.println("execution ends.");
+//        System.out.println("execution ends.");
     }
 
     @Override
@@ -73,5 +84,10 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
 
     public List<DrawCommand> getCommandList() {
         return commandList;
+    }
+
+    @Override
+    public List<WhiteboardClientStub> getClientList() throws RemoteException {
+        return this.clientList;
     }
 }
