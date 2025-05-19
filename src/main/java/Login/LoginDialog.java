@@ -21,6 +21,7 @@ public class LoginDialog extends JDialog{
     private boolean isSucceed = false;
     private WhiteboardClientStub clientStub;
     private WhiteboardServerStub serverStub;
+    private boolean accepted;
 
     public LoginDialog() {
         frame = new JFrame("Login");
@@ -81,7 +82,7 @@ public class LoginDialog extends JDialog{
             }
 
             try {
-                this.clientStub = new ClientServant(this.username);
+                this.clientStub = new ClientServant(this.username, this.isAdmin);
             } catch (RemoteException re) {
                 JOptionPane.showMessageDialog(frame, "Failed to create client stub.", "Server Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -95,15 +96,18 @@ public class LoginDialog extends JDialog{
             }
 
             try {
-                serverStub.registerClient(clientStub);
+                accepted = serverStub.registerClient(clientStub);
             } catch (RemoteException ex) {
-                System.out.println("client register failed.");
                 JOptionPane.showMessageDialog(this, "Client register failed.");
             } catch (DuplicateUsernameException ex) {
-                System.out.println(ex.getMessage());
                 JOptionPane.showMessageDialog(this, ex.getMessage());
                 usernameField.setText("");
                 usernameField.requestFocus();
+                this.username = null;
+            }
+
+            if (!isAdmin && !accepted) {
+                JOptionPane.showMessageDialog(this, "You have been rejected by the whiteboard manager.");
                 this.username = null;
             }
 

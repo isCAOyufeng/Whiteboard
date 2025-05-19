@@ -2,15 +2,18 @@ package LocalWhiteboard;
 
 import Stubs.WhiteboardServerStub;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import static LocalWhiteboard.ToolType.*;
 
 public class DrawWhiteBoard extends JPanel {
     private ToolType currentTool = ToolType.LINE;
@@ -19,7 +22,7 @@ public class DrawWhiteBoard extends JPanel {
     private final List<Point> path = new ArrayList<>();
     private final BufferedImage canvasImage;
     private final Graphics2D g2;
-    private int eraserSize = 10;
+    private int rubberSize = 10;
     private String username = null;
     private Point usernameLabelPoint = null;
 
@@ -35,11 +38,31 @@ public class DrawWhiteBoard extends JPanel {
         try {
             commandList = serverStub.getCommandList();
         } catch (RemoteException e) {
-            System.out.println("failed fetching command list.");
+            System.err.println("failed fetching command list.");
         }
-        
+
         for (DrawCommand command : commandList) {
-            this.draw(command.getUsername(), command.getStartPoint(), command.getEndPoint(), ToolType.fromDrawCommandType(command.getType()), command.getPath(), command.getColor(), command.getEraserSize(), command.getText());
+            this.draw(command.getUsername(), command.getStartPoint(), command.getEndPoint(), ToolType.fromDrawCommandType(command.getType()), command.getPath(), command.getColor(), command.getRubberSize(), command.getText());
+        }
+
+        byte[] imageBytes = null;
+        try {
+            imageBytes = serverStub.getBaseImage();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        if (imageBytes != null) {
+            ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
+            BufferedImage image = null;
+            try {
+                image = ImageIO.read(bais);
+                if (image != null) {
+                    this.loadImage(image);
+                }
+            } catch (IOException e) {
+                System.err.println("Failed to load image: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
 
         MouseAdapter mouseAdapter = new MouseAdapter() {
@@ -49,7 +72,6 @@ public class DrawWhiteBoard extends JPanel {
                 startPoint = e.getPoint();
                 if (currentTool == ToolType.FREEDRAW) {
                     path.add(startPoint);
-                    System.out.println(path);
                     g2.setColor(currentColor);
                     g2.fillOval(e.getX(), e.getY(), 2, 2);
                     repaint();
@@ -69,13 +91,12 @@ public class DrawWhiteBoard extends JPanel {
                     }
 
                     // broadcast here
-                    command = new DrawCommand(Whiteboard.getUsername(), ToolType.fromToolType(ToolType.TEXT), startPoint, startPoint, currentColor, inputText, eraserSize);
+                    command = new DrawCommand(Whiteboard.getUsername(), ToolType.fromToolType(ToolType.TEXT), startPoint, startPoint, currentColor, inputText, rubberSize);
                     try {
                         serverStub.broadcastLocalChanges(command);
                     } catch (RemoteException ex) {
-                        System.out.println("broadcast failed.");
+                        System.err.println("broadcast failed.");
                     }
-                    System.out.println("command broadcast successfully.");
 
                     DrawWhiteBoard.this.username = Whiteboard.getUsername();
                     DrawWhiteBoard.this.usernameLabelPoint = startPoint;
@@ -94,10 +115,9 @@ public class DrawWhiteBoard extends JPanel {
                 endPoint = e.getPoint();
                 if (currentTool == ToolType.FREEDRAW || currentTool == ToolType.RUBBER) {
                     path.add(endPoint);
-                    System.out.println(path);
                     if (currentTool == ToolType.RUBBER) {
                         g2.setColor(Color.WHITE);
-                        g2.setStroke(new BasicStroke(eraserSize));
+                        g2.setStroke(new BasicStroke(rubberSize));
                     } else {
                         g2.setColor(currentColor);
                         g2.setStroke(new BasicStroke(1));
@@ -112,19 +132,17 @@ public class DrawWhiteBoard extends JPanel {
                 endPoint = e.getPoint();
                 if (currentTool == ToolType.RUBBER || currentTool == ToolType.FREEDRAW) {
                     path.add(endPoint);
-                    System.out.println(path);
                     if (currentTool == ToolType.RUBBER) {
-                        command = new DrawCommand(Whiteboard.getUsername(), ToolType.fromToolType(ToolType.RUBBER), path, currentColor, eraserSize);
+                        command = new DrawCommand(Whiteboard.getUsername(), ToolType.fromToolType(ToolType.RUBBER), path, currentColor, rubberSize);
                     } else {
-                        command = new DrawCommand(Whiteboard.getUsername(), ToolType.fromToolType(ToolType.FREEDRAW), path, currentColor, eraserSize);
+                        command = new DrawCommand(Whiteboard.getUsername(), ToolType.fromToolType(ToolType.FREEDRAW), path, currentColor, rubberSize);
                     }
                     // broadcast here
                     try {
                         serverStub.broadcastLocalChanges(command);
                     } catch (RemoteException ex) {
-                        System.out.println("broadcast failed.");
+                        System.err.println("broadcast failed.");
                     }
-                    System.out.println("command broadcast successfully.");
                     path.clear();
                     DrawWhiteBoard.this.username = Whiteboard.getUsername();
                     DrawWhiteBoard.this.usernameLabelPoint = endPoint;
@@ -140,11 +158,9 @@ public class DrawWhiteBoard extends JPanel {
                 }
 
                 g2.setColor(currentColor);
-                System.out.println(currentColor);
                 g2.setStroke(new BasicStroke(1));
                 switch (currentTool) {
                     case LINE:
-                        System.out.println(path.size());
                         g2.drawLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
                         break;
                     case TRIANGLE:
@@ -187,14 +203,13 @@ public class DrawWhiteBoard extends JPanel {
                 timer.setRepeats(false);
                 timer.start();
 
-                command = new DrawCommand(Whiteboard.getUsername(), ToolType.fromToolType(currentTool), startPoint, endPoint, currentColor, null, eraserSize);
+                command = new DrawCommand(Whiteboard.getUsername(), ToolType.fromToolType(currentTool), startPoint, endPoint, currentColor, null, rubberSize);
                 // broadcast here
                 try {
                     serverStub.broadcastLocalChanges(command);
                 } catch (RemoteException ex) {
-                    System.out.println("broadcast failed.");
+                    System.err.println("broadcast failed.");
                 }
-                System.out.println("command broadcast successfully.");
             }
         };
 
@@ -210,14 +225,14 @@ public class DrawWhiteBoard extends JPanel {
         this.currentColor = color;
     }
 
-    public void setEraserSize(int size) {
-        this.eraserSize = size;
+    public void setRubberSize(int size) {
+        this.rubberSize = size;
     }
 
     public void draw(String username, Point startPoint, Point endPoint, ToolType toolType, List<Point> path, Color color, int rubberSize, String text) {
         g2.setColor(color);
         g2.setStroke(new BasicStroke(1));
-        this.setEraserSize(rubberSize);
+        this.setRubberSize(rubberSize);
         switch (toolType) {
             case LINE -> g2.drawLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
             case TRIANGLE -> {
@@ -250,7 +265,7 @@ public class DrawWhiteBoard extends JPanel {
             }
             case RUBBER -> {
                 g2.setColor(Color.WHITE);
-                g2.setStroke(new BasicStroke(eraserSize));
+                g2.setStroke(new BasicStroke(this.rubberSize));
                 for (int i = 1; i < path.size(); i++) {
                     Point p1 = path.get(i - 1);
                     Point p2 = path.get(i);
@@ -287,7 +302,7 @@ public class DrawWhiteBoard extends JPanel {
     }
 
     public void loadImage(BufferedImage image) {
-        g2.drawImage(image, 0, 0, this.getWidth(), this.getHeight(), null);
+        g2.drawImage(image, 0, 0, 800, 600, null);
         repaint();
     }
 

@@ -16,9 +16,16 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class ClientServant extends UnicastRemoteObject implements WhiteboardClientStub {
     private final String username;
+    private final boolean isAdmin;
 
-    public ClientServant(String username) throws RemoteException {
+    public ClientServant(String username, boolean isAdmin) throws RemoteException {
         this.username = username;
+        this.isAdmin = isAdmin;
+    }
+
+    @Override
+    public boolean receiveVerification(String username) throws RemoteException {
+        return Whiteboard.showVerificationDialog(username);
     }
 
     @Override
@@ -28,7 +35,7 @@ public class ClientServant extends UnicastRemoteObject implements WhiteboardClie
         Point endPoint = command.getEndPoint();
         ToolType currentTool = ToolType.fromDrawCommandType(command.getType());
         Color color = command.getColor();
-        int rubberSize = command.getEraserSize();
+        int rubberSize = command.getRubberSize();
         java.util.List<Point> path = command.getPath();
         String text = command.getText();
 
@@ -45,7 +52,6 @@ public class ClientServant extends UnicastRemoteObject implements WhiteboardClie
     @Override
     public void receiveServerDownMessage() throws RemoteException {
         Whiteboard.clientExit(2);
-        System.out.println("received server down message.");
 
         // wait for 3 seconds, then shut down the program by force
         new Thread(() -> {
@@ -61,7 +67,6 @@ public class ClientServant extends UnicastRemoteObject implements WhiteboardClie
     @Override
     public void receiveServerDownMessage(String message) throws RemoteException {
         Whiteboard.clientExit(1);
-        System.out.println(message);
 
         // wait for 3 seconds, then shut down the program by force
         new Thread(() -> {
@@ -80,7 +85,24 @@ public class ClientServant extends UnicastRemoteObject implements WhiteboardClie
     }
 
     @Override
+    public boolean isAdmin() throws RemoteException {
+        return isAdmin;
+    }
+
+    @Override
     public void receiveClearCanvasMessage() throws RemoteException {
         Whiteboard.canvas.clearCanvas();
+    }
+
+    @Override
+    public void receiveImage(byte[] imageBytes) throws RemoteException {
+        ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
+        try {
+            BufferedImage image = ImageIO.read(bais);
+            System.out.println(image == null);
+            Whiteboard.canvas.loadImage(image);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

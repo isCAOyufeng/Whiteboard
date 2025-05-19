@@ -1,7 +1,6 @@
 package LocalWhiteboard;
 
 import Stubs.WhiteboardClientStub;
-import Stubs.WhiteboardServerStub;
 import Login.LoginDialog;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -11,7 +10,6 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.rendering.PDFRenderer;
-import LocalWhiteboard.ToolType;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -23,6 +21,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Whiteboard {
     public static JFrame frame;
@@ -42,16 +43,12 @@ public class Whiteboard {
                 }
             }
 
-            System.out.println("success");
-
             canvas = new DrawWhiteBoard(loginDialog.getServerStub());
 
             Whiteboard.launchWhiteboardGUI(username, loginDialog.isAdmin());
-
-            System.out.println("whiteboard window created.");
     }
 
-    public static void launchWhiteboardGUI(String username, boolean isAdmin) {
+    private static void launchWhiteboardGUI(String username, boolean isAdmin) {
         SwingUtilities.invokeLater(() -> {
             frame = new JFrame("LocalWhiteboard.Whiteboard - " + username + (isAdmin ? " Admin" : ""));
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -60,12 +57,12 @@ public class Whiteboard {
             String[] tools = {"Line", "Triangle", "Rectangle", "Oval", "FreeDraw", "Text", "Rubber"};
             JComboBox<String> toolSelector = new JComboBox<>(tools);
             JButton colorButton = new JButton("Choose Color");
-            JSlider eraserSlider = new JSlider(5, 50, 10);
+            JSlider rubberSlider = new JSlider(5, 50, 10);
 
-            eraserSlider.setMajorTickSpacing(15);
-            eraserSlider.setPaintTicks(true);
-            eraserSlider.setPaintLabels(true);
-            eraserSlider.setVisible(false);
+            rubberSlider.setMajorTickSpacing(15);
+            rubberSlider.setPaintTicks(true);
+            rubberSlider.setPaintLabels(true);
+            rubberSlider.setVisible(false);
 
             toolSelector.addActionListener(e -> {
                 String selected = (String) toolSelector.getSelectedItem();
@@ -73,7 +70,7 @@ public class Whiteboard {
                 canvas.setTool(tool);
 
                 colorButton.setVisible(tool != ToolType.RUBBER);
-                eraserSlider.setVisible(tool == ToolType.RUBBER);
+                rubberSlider.setVisible(tool == ToolType.RUBBER);
                 toolsPanel.revalidate();
                 toolsPanel.repaint();
             });
@@ -83,12 +80,12 @@ public class Whiteboard {
                 if (color != null) canvas.setColor(color);
             });
 
-            eraserSlider.addChangeListener(e -> canvas.setEraserSize(eraserSlider.getValue()));
+            rubberSlider.addChangeListener(e -> canvas.setRubberSize(rubberSlider.getValue()));
 
             toolsPanel.add(new JLabel("Tool:"));
             toolsPanel.add(toolSelector);
             toolsPanel.add(colorButton);
-            toolsPanel.add(eraserSlider);
+            toolsPanel.add(rubberSlider);
 
             JPanel chatPanel = new JPanel(new BorderLayout());
             chatPanel.setPreferredSize(new Dimension(200, 600));
@@ -128,8 +125,6 @@ public class Whiteboard {
             chatPanel.add(messagePanel, BorderLayout.SOUTH);
 
             if (isAdmin) {
-                JButton userList = new JButton("view users");
-                toolsPanel.add(userList);
                 JMenuBar menuBar = new JMenuBar();
                 JMenu fileMenu = new JMenu("File");
 
@@ -158,6 +153,10 @@ public class Whiteboard {
                             PDFRenderer pdfRenderer = new PDFRenderer(document);
                             BufferedImage image = pdfRenderer.renderImageWithDPI(0, 300);
                             canvas.loadImage(image);
+
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            ImageIO.write(image, "png", baos);
+                            loginDialog.getServerStub().sendImage(baos.toByteArray());
 
                             document.close();
                         } catch (IOException ex) {
@@ -193,61 +192,65 @@ public class Whiteboard {
 
                 menuBar.add(fileMenu);
                 frame.setJMenuBar(menuBar);
+            }
 
-                userList.addActionListener(e -> {
-                    try {
-                        java.util.List<WhiteboardClientStub> clients = loginDialog.getServerStub().getClientList();
+            JButton userList = new JButton("view users");
+            toolsPanel.add(userList);
+            userList.addActionListener(e -> {
+                try {
+                    java.util.List<WhiteboardClientStub> clients = loginDialog.getServerStub().getClientList();
 
-                        JDialog userDialog = new JDialog(frame, "Connected Users", true);
-                        userDialog.setLayout(new BorderLayout());
+                    JDialog userDialog = new JDialog(frame, "Connected Users", true);
+                    userDialog.setLayout(new BorderLayout());
 
-                        DefaultListModel<String> listModel = new DefaultListModel<>();
-                        for (WhiteboardClientStub client : clients) {
-                            listModel.addElement(client.getUsername());
+                    DefaultListModel<String> listModel = new DefaultListModel<>();
+                    for (WhiteboardClientStub client : clients) {
+                        listModel.addElement(client.getUsername());
+                    }
+
+                    JList<String> userJList = new JList<>(listModel);
+                    JScrollPane scrollPane = new JScrollPane(userJList);
+
+                    JButton kickButton = new JButton("Kick Selected User");
+                    kickButton.addActionListener(event -> {
+                        int selectedIndex = userJList.getSelectedIndex();
+                        if (selectedIndex == 0) {
+                            JOptionPane.showMessageDialog(userDialog,
+                                    "Error kicking user: you cannot kick out yourself.",
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
                         }
-
-                        JList<String> userJList = new JList<>(listModel);
-                        JScrollPane scrollPane = new JScrollPane(userJList);
-
-                        JButton kickButton = new JButton("Kick Selected User");
-                        kickButton.addActionListener(event -> {
-                            int selectedIndex = userJList.getSelectedIndex();
-                            if (selectedIndex == 0) {
+                        if (selectedIndex > 0) {
+                            try {
+                                WhiteboardClientStub clientToKick = clients.get(selectedIndex);
+                                loginDialog.getServerStub().removeClient(clientToKick);
+                                clientToKick.receiveServerDownMessage("kicked out");
+                                listModel.remove(selectedIndex);
+                            } catch (RemoteException ex) {
                                 JOptionPane.showMessageDialog(userDialog,
-                                        "Error kicking user: you cannot kick out yourself.",
+                                        "Error kicking user: " + ex.getMessage(),
                                         "Error",
                                         JOptionPane.ERROR_MESSAGE);
                             }
-                            if (selectedIndex > 0) {
-                                try {
-                                    WhiteboardClientStub clientToKick = clients.get(selectedIndex);
-                                    loginDialog.getServerStub().removeClient(clientToKick);
-                                    clientToKick.receiveServerDownMessage("kicked out");
-                                    listModel.remove(selectedIndex);
-                                } catch (RemoteException ex) {
-                                    JOptionPane.showMessageDialog(userDialog,
-                                            "Error kicking user: " + ex.getMessage(),
-                                            "Error",
-                                            JOptionPane.ERROR_MESSAGE);
-                                }
-                            }
-                        });
+                        }
+                    });
 
-                        userDialog.add(scrollPane, BorderLayout.CENTER);
+                    userDialog.add(scrollPane, BorderLayout.CENTER);
+                    if (isAdmin) {
                         userDialog.add(kickButton, BorderLayout.SOUTH);
-
-                        userDialog.setSize(300, 400);
-                        userDialog.setLocationRelativeTo(frame);
-                        userDialog.setVisible(true);
-
-                    } catch (RemoteException ex) {
-                        JOptionPane.showMessageDialog(frame,
-                                "Error getting user list: " + ex.getMessage(),
-                                "Error",
-                                JOptionPane.ERROR_MESSAGE);
                     }
-                });
-            }
+
+                    userDialog.setSize(300, 400);
+                    userDialog.setLocationRelativeTo(frame);
+                    userDialog.setVisible(true);
+
+                } catch (RemoteException ex) {
+                    JOptionPane.showMessageDialog(frame,
+                            "Error getting user list: " + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            });
 
             JButton exit = new JButton("exit");
             exit.addActionListener(e -> {
@@ -299,23 +302,18 @@ public class Whiteboard {
         }
     }
 
-    public static void managerExit() {
-        System.out.println("managerExit called.");
-
+    private static void managerExit() {
         new Thread(() -> {
             try {
                 loginDialog.getServerStub().sendServerDownMessage();
-                System.out.println("sendServerDownMessage done.");
 
                 loginDialog.getServerStub().shutDownServer(loginDialog.getIp(), loginDialog.getPort());
-                System.out.println("shutDownServer done.");
             } catch (RemoteException ex) {
                 System.err.println("Exception in background thread:");
                 ex.printStackTrace();
             }
 
             SwingUtilities.invokeLater(() -> {
-                System.out.println("Disposing frame...");
                 frame.dispose();
                 System.exit(0);
             });
@@ -327,6 +325,43 @@ public class Whiteboard {
             chatArea.append(username + ": " + message + "\n");
             chatArea.setCaretPosition(chatArea.getDocument().getLength());
         }
+    }
+
+    public static boolean showVerificationDialog(String username) {
+        final AtomicReference<AtomicBoolean>[] accepted = new AtomicReference[]{null};
+        JDialog dialog = new JDialog(frame, "New User Verification", true);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel messagePanel = new JPanel();
+        messagePanel.add(new JLabel("User '" + username + "' wants to share your whiteboard."));
+
+        JPanel buttonPanel = new JPanel();
+        JButton acceptButton = new JButton("Accept");
+        JButton rejectButton = new JButton("Reject");
+
+        acceptButton.addActionListener(e -> {
+            dialog.dispose();
+            accepted[0] = new AtomicReference<>(new AtomicBoolean(true));
+            accepted[0].set(new AtomicBoolean(true));
+        });
+
+        rejectButton.addActionListener(e -> {
+            dialog.dispose();
+            accepted[0] = new AtomicReference<>(new AtomicBoolean(false));
+            accepted[0].set(new AtomicBoolean(false));
+        });
+
+        buttonPanel.add(acceptButton);
+        buttonPanel.add(rejectButton);
+
+        dialog.add(messagePanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setSize(300, 150);
+        dialog.setLocationRelativeTo(frame);
+        dialog.setVisible(true);
+
+        return accepted[0].get().get();
     }
 
     public static String getUsername() {

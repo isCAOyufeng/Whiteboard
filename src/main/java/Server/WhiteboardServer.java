@@ -18,7 +18,7 @@ public class WhiteboardServer {
             WhiteboardServerStub serverStub = new ServerServant();
             Naming.rebind("rmi://" + args[0] + ":" + args[1] + "/whiteboard", serverStub);
 
-            System.out.println("LocalWhiteboard.Whiteboard server is running...");
+//            System.out.println("LocalWhiteboard.Whiteboard server is running...");
         } catch (Exception e) {
             LoginDialog.showErrorMessage("RMI Registry already running on port " + port + ". Please try other IP/port.");
             throw e;

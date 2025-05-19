@@ -11,7 +11,7 @@ import java.util.List;
 public interface WhiteboardServerStub extends Remote {
     void broadcastLocalChanges(DrawCommand command) throws RemoteException;
     void broadcastChatMessages(String username, String message) throws RemoteException;
-    void registerClient(WhiteboardClientStub clientStub) throws RemoteException, DuplicateUsernameException;
+    boolean registerClient(WhiteboardClientStub clientStub) throws RemoteException, DuplicateUsernameException;
     void sendServerDownMessage() throws RemoteException;
     void removeClient(WhiteboardClientStub clientStub) throws RemoteException;
     void shutDownServer(String ip, int port) throws RemoteException;
@@ -19,4 +19,6 @@ public interface WhiteboardServerStub extends Remote {
     void clearCommandList() throws RemoteException;
     void sendClearCanvasMessage() throws RemoteException;
     List<WhiteboardClientStub> getClientList() throws RemoteException;
+    void sendImage(byte[] imageBytes) throws RemoteException;
+    byte[] getBaseImage() throws  RemoteException;
 }

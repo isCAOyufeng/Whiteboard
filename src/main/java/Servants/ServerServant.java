@@ -15,6 +15,7 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
     private final List<WhiteboardClientStub> clientList = Collections.synchronizedList(new ArrayList<>());
     private final Set<String> usernameList = new HashSet<>();
     private final List<DrawCommand> commandList = new ArrayList<>();
+    private byte[] baseImage = null;
 
     public ServerServant() throws RemoteException {
     }
@@ -44,12 +45,19 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
     }
 
     @Override
-    public void registerClient(WhiteboardClientStub clientStub) throws RemoteException, DuplicateUsernameException {
+    public boolean registerClient(WhiteboardClientStub clientStub) throws RemoteException, DuplicateUsernameException {
+        boolean accepted = false;
         if (usernameList.contains((clientStub.getUsername()))) {
             throw new DuplicateUsernameException("Username already exists.");
         }
-        usernameList.add(clientStub.getUsername());
-        clientList.add(clientStub);
+        if (!clientStub.isAdmin()) {
+            accepted = sendVerificationToAdmin(clientStub.getUsername());
+        }
+        if (clientStub.isAdmin() || accepted) {
+            usernameList.add(clientStub.getUsername());
+            clientList.add(clientStub);
+        }
+        return accepted;
     }
 
     @Override
@@ -63,7 +71,7 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
             try {
                 clientStub.receiveServerDownMessage();
             } catch (RemoteException e) {
-                System.out.println("remote exception.");
+                System.err.println("remote exception.");
             }
         }
     }
@@ -79,7 +87,6 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
         try {
             Naming.unbind("rmi://" + ip + ":" + port + "/whiteboard");
             UnicastRemoteObject.unexportObject(this, true);
-            System.out.println("LocalWhiteboard.Whiteboard server unbound and shut down cleanly.");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -105,5 +112,28 @@ public class ServerServant extends UnicastRemoteObject implements WhiteboardServ
     @Override
     public List<WhiteboardClientStub> getClientList() throws RemoteException {
         return this.clientList;
+    }
+
+    @Override
+    public void sendImage(byte[] imageBytes) throws RemoteException {
+        this.baseImage = imageBytes;
+        for (WhiteboardClientStub clientStub : clientList) {
+            clientStub.receiveImage(imageBytes);
+        }
+    }
+
+    @Override
+    public byte[] getBaseImage() throws RemoteException {
+        return this.baseImage;
+    }
+
+    private boolean sendVerificationToAdmin(String username) {
+        boolean accepted = false;
+        try {
+            accepted = clientList.get(0).receiveVerification(username);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        return accepted;
     }
 }
